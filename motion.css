@@ -113,12 +113,16 @@ html[dir=rtl] .hero-grid { mask-image: radial-gradient(ellipse at 25% 45%, black
   position: relative;
   width: 100%;
   padding: 48px 28px;
+}
+.portrait-shell {
+  position: relative;
+  z-index: 3;
   transform: perspective(1000px) rotateX(var(--scene-x, 0deg)) rotateY(var(--scene-y, 0deg));
-  transition: transform .65s var(--ease-out);
+  will-change: transform;
 }
 .hero-art:before { inset: 40px 30px 70px 35px; border-color: #adc1f0; border-radius: 26px; transform: rotate(9deg); z-index: 1; }
 .hero-art:after { inset: 10px -10px; background-size: 17px 17px; z-index: -1; opacity: .65; }
-#neural-field { position: absolute; inset: -50px; width: calc(100% + 100px); height: calc(100% + 100px); z-index: 0; pointer-events: none; }
+#neural-field { position: absolute; inset: -50px; width: calc(100% + 100px); height: calc(100% + 100px); z-index: 0; pointer-events: none; transform: translateZ(0); }
 .portrait-frame {
   position: relative;
   z-index: 3;
@@ -138,9 +142,9 @@ html[dir=rtl] .hero-grid { mask-image: radial-gradient(ellipse at 25% 45%, black
   pointer-events: none;
 }
 .portrait-frame img { aspect-ratio: 1 / 1.12; }
-.portrait-caption { background: #ffffffeb; backdrop-filter: blur(10px); font-size: 10px; }
+.portrait-caption { background: #ffffffeb; backdrop-filter: none; font-size: 10px; }
 .caption-dot { animation: signal-dot 3s ease-out infinite; }
-.art-label { z-index: 5; background: #ffffffed; backdrop-filter: blur(10px); border-color: #dfe7f9; box-shadow: 0 12px 28px #16305f10; }
+.art-label { z-index: 5; background: #ffffffed; backdrop-filter: none; border-color: #dfe7f9; box-shadow: 0 12px 28px #16305f10; }
 .label-top { top: 38px; left: -35px; animation: label-float-a 6s ease-in-out infinite; }
 .label-bottom { right: -20px; bottom: 64px; animation: label-float-b 7s ease-in-out infinite; }
 .art-spark { top: 0; right: -6px; z-index: 4; animation: spark-turn 26s linear infinite; }

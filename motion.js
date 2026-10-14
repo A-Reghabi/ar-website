@@ -7,6 +7,7 @@
   const toggle = document.getElementById("motion-toggle");
   const hero = document.querySelector(".hero");
   const stage = document.querySelector(".hero-art");
+  const portrait = document.querySelector(".portrait-shell");
   const aura = document.querySelector(".pointer-aura");
   const canvas = document.getElementById("neural-field");
   const context = canvas.getContext("2d");
@@ -14,7 +15,8 @@
   try { paused = localStorage.getItem("portfolio-motion-paused") === "true"; } catch { /* Storage is optional. */ }
   let heroVisible = true;
   let frame = 0;
-  let lastFrame = 0;
+  let lastFrame = null;
+  let drawAccumulator = 0;
   let sceneTime = 0;
   let canvasWidth = 0;
   let canvasHeight = 0;
@@ -23,6 +25,9 @@
   let pointerX = 0;
   let pointerY = 0;
   const scenePointer = { x: 0, y: 0 };
+  const pointerTarget = { x: 0, y: 0 };
+  let stageBounds = null;
+  let pointerInside = false;
   const revealElements = [];
 
   const canAnimate = () => !paused && !reducedMotion.matches;
@@ -151,24 +156,39 @@
   }
 
   function sizeCanvas() {
-    const bounds = canvas.getBoundingClientRect();
     canvasWidth = canvas.clientWidth;
     canvasHeight = canvas.clientHeight;
     const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
-    canvas.width = Math.round(canvasWidth * ratio);
-    canvas.height = Math.round(canvasHeight * ratio);
+    const width = Math.round(canvasWidth * ratio);
+    const height = Math.round(canvasHeight * ratio);
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
     if (context) context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    if (bounds.width) drawScene(sceneTime);
+    stageBounds = stage.getBoundingClientRect();
+    drawScene(sceneTime);
     updateScroll();
   }
 
   function animate(timestamp) {
-    if (!canAnimate() || document.hidden || !heroVisible) { frame = 0; lastFrame = 0; return; }
-    if (!lastFrame) lastFrame = timestamp;
-    const delta = timestamp - lastFrame;
-    if (delta >= 1000 / 30) {
-      sceneTime += Math.min(delta, 80);
-      lastFrame = timestamp;
+    if (!canAnimate() || document.hidden || !heroVisible) { frame = 0; lastFrame = null; return; }
+    const delta = lastFrame === null ? 0 : Math.min(Math.max(timestamp - lastFrame, 0), 50);
+    lastFrame = timestamp;
+    sceneTime += delta;
+    const followingPointer = pointerInside || Math.abs(scenePointer.x) + Math.abs(scenePointer.y) > .0001;
+    if (followingPointer) {
+      // One shared, time-based response for the photo and the wireframe. No
+      // layout reads or style writes occur in the high-frequency pointer handler.
+      const smoothing = 1 - Math.exp(-delta / 75);
+      scenePointer.x += (pointerTarget.x - scenePointer.x) * smoothing;
+      scenePointer.y += (pointerTarget.y - scenePointer.y) * smoothing;
+      portrait.style.setProperty("--scene-x", `${-scenePointer.y * 5}deg`);
+      portrait.style.setProperty("--scene-y", `${scenePointer.x * 7}deg`);
+    }
+    const interval = 1000 / (followingPointer ? 60 : 30);
+    drawAccumulator += delta;
+    if (drawAccumulator + .01 >= interval) {
+      // Keep the remainder so fractional display timestamps cannot lose slots.
+      drawAccumulator = Math.max(0, drawAccumulator - Math.floor((drawAccumulator + .01) / interval) * interval);
       drawScene(sceneTime);
     }
     frame = requestAnimationFrame(animate);
@@ -177,14 +197,18 @@
   function syncLoop() {
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
-    lastFrame = 0;
+    lastFrame = null;
+    drawAccumulator = 0;
     if (canAnimate() && !document.hidden && heroVisible && context) frame = requestAnimationFrame(animate);
     else drawScene(sceneTime);
   }
 
   function resetInteractions() {
-    stage.style.removeProperty("--scene-x");
-    stage.style.removeProperty("--scene-y");
+    pointerInside = false;
+    pointerTarget.x = pointerTarget.y = 0;
+    scenePointer.x = scenePointer.y = 0;
+    portrait.style.removeProperty("--scene-x");
+    portrait.style.removeProperty("--scene-y");
     document.querySelectorAll(".work-card, .button").forEach(element => {
       ["--tilt-x", "--tilt-y", "--magnet-x", "--magnet-y"].forEach(property => element.style.removeProperty(property));
     });
@@ -209,6 +233,7 @@
 
   function updateScroll() {
     scrollFrame = 0;
+    if (pointerInside) stageBounds = stage.getBoundingClientRect();
     const maximum = root.scrollHeight - window.innerHeight;
     root.style.setProperty("--progress", maximum > 0 ? String(Math.min(1, Math.max(0, window.scrollY / maximum))) : "0");
     document.body.classList.toggle("has-scrolled", window.scrollY > 15);
@@ -230,21 +255,18 @@
   }, { passive: true });
   document.documentElement.addEventListener("pointerleave", () => aura.classList.remove("is-visible"));
 
+  stage.addEventListener("pointerenter", () => {
+    stageBounds = stage.getBoundingClientRect();
+  });
   stage.addEventListener("pointermove", event => {
-    if (!canAnimate() || !precisePointer.matches) return;
-    const bounds = stage.getBoundingClientRect();
-    const x = ((event.clientX - bounds.left) / bounds.width - .5) * 2;
-    const y = ((event.clientY - bounds.top) / bounds.height - .5) * 2;
-    scenePointer.x = x;
-    scenePointer.y = y;
-    stage.style.setProperty("--scene-x", `${-y * 5}deg`);
-    stage.style.setProperty("--scene-y", `${x * 7}deg`);
+    if (!canAnimate() || !precisePointer.matches || event.pointerType === "touch" || !stageBounds?.width || !stageBounds?.height) return;
+    pointerInside = true;
+    pointerTarget.x = Math.max(-1, Math.min(1, ((event.clientX - stageBounds.left) / stageBounds.width - .5) * 2));
+    pointerTarget.y = Math.max(-1, Math.min(1, ((event.clientY - stageBounds.top) / stageBounds.height - .5) * 2));
   }, { passive: true });
   stage.addEventListener("pointerleave", () => {
-    scenePointer.x = 0;
-    scenePointer.y = 0;
-    stage.style.setProperty("--scene-x", "0deg");
-    stage.style.setProperty("--scene-y", "0deg");
+    pointerInside = false;
+    pointerTarget.x = pointerTarget.y = 0;
   });
 
   document.querySelectorAll(".work-card").forEach(card => {
