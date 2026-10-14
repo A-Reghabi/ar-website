@@ -13,12 +13,42 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="canonical" href="https://reghabi.ir/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="fonts.css">
-  <link rel="stylesheet" href="motion.css">
+  <script id="asset-loader">
+    (() => {
+      // GitHub Pages controls HTTP cache headers. Give application assets a
+      // fresh URL on each page load so an ordinary reload gets current code.
+      const version = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      const assetURL = path => `${path}?v=${version}`;
+      ["styles.css", "fonts.css", "motion.css"].forEach(path => {
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = assetURL(path);
+        document.head.appendChild(link);
+      });
+      const scripts = ["app.js", "motion.js"];
+      scripts.forEach(path => {
+        const preload = document.createElement("link");
+        preload.rel = "preload";
+        preload.as = "script";
+        preload.href = assetURL(path);
+        document.head.appendChild(preload);
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        scripts.forEach(path => {
+          const script = document.createElement("script");
+          script.async = false;
+          script.src = assetURL(path);
+          document.head.appendChild(script);
+        });
+      }, { once: true });
+    })();
+  </script>
+  <noscript>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="fonts.css">
+    <link rel="stylesheet" href="motion.css">
+  </noscript>
   <title>Alireza Reghabi | AI Engineer</title>
-  <script src="app.js" defer></script>
-  <script src="motion.js" defer></script>
 </head>
 <body>
   <div class="scroll-progress" aria-hidden="true"></div>

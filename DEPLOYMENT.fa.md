@@ -84,6 +84,6 @@ Resolve-DnsName www.reghabi.ir -Type CNAME
 - خطای 404: `index.html` باید در ریشهٔ شاخهٔ انتخاب‌شده باشد و اجرای Pages در Actions موفق شده باشد.
 - خطای DNS: چهار A record و CNAME را بررسی کنید. رکورد www باید به دامنهٔ GitHub اشاره کند.
 - گزینهٔ HTTPS غیرفعال: برای صدور گواهی زمان بدهید و رکوردهای متعارض را بررسی کنید.
-- نمایش نسخهٔ قدیمی: صفحه را با Ctrl+F5 باز کنید و آخرین اجرای Pages را بررسی کنید.
+- نمایش نسخهٔ قدیمی: آخرین اجرای Pages را بررسی کنید و پس از پایان انتشار، صفحه را با رفرش معمولی باز کنید. فایل‌های CSS و JavaScript آدرس نسخه‌دار تازه دریافت می‌کنند. اگر خود HTML هنوز قدیمی است، برای به‌روزرسانی کش انتشار GitHub Pages کمی زمان بدهید.
 
 مرجع بررسی DNS و خطاهای گواهی، [راهنمای عیب‌یابی GitHub](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/troubleshooting-custom-domains-and-github-pages) است.
